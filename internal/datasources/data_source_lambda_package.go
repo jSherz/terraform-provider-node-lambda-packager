@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	schema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -30,10 +29,11 @@ type LambdaPackageDataSource struct {
 }
 
 type LambdaPackageDataSourceModel struct {
-	Args           types.List   `tfsdk:"args"`
-	Entrypoint     types.String `tfsdk:"entrypoint"`
-	Filename       types.String `tfsdk:"filename"`
-	SourceCodeHash types.String `tfsdk:"source_code_hash"`
+	Args             types.List   `tfsdk:"args"`
+	Entrypoint       types.String `tfsdk:"entrypoint"`
+	WorkingDirectory types.String `tfsdk:"working_directory"`
+	Filename         types.String `tfsdk:"filename"`
+	SourceCodeHash   types.String `tfsdk:"source_code_hash"`
 }
 
 func (d *LambdaPackageDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -54,6 +54,10 @@ func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.Sch
 			"entrypoint": schema.StringAttribute{
 				Required:    true,
 				Description: "Path to lambda function entrypoint.",
+			},
+			"working_directory": schema.StringAttribute{
+				Required:    true,
+				Description: "Typically the folder containing the package.json at the root of your Lambda project.",
 			},
 			"filename": schema.StringAttribute{
 				Computed:    true,
@@ -108,17 +112,23 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	outputFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to create temporary file for bundle output",
-			fmt.Sprintf("Error: %s", err),
-		)
-		return
-	}
-	defer func(outputFile *os.File) {
-		_ = outputFile.Close()
-	}(outputFile)
+	//outputFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to create temporary file for bundle output",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//	return
+	//}
+	//outputFilePath := outputFile.Name()
+	//err = outputFile.Close()
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to close temporary bundle output file",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//	return
+	//}
 
 	rawArgs := data.Args.Elements()
 	var args []string
@@ -126,10 +136,23 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		args = append(args, (rawArg.(types.String)).ValueString())
 	}
 
-	args = append(args, fmt.Sprintf("--outfile=%s", outputFile.Name()))
+	//args = append(args, fmt.Sprintf("--outfile=%s", outputFilePath))
 	args = append(args, fullEntrypointPath)
 
 	buildArgs, err := cli.ParseBuildOptions(args)
+
+	workingDirectory := data.WorkingDirectory.ValueString()
+	absWorkingDirectory, err := filepath.Abs(workingDirectory)
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Could not find find the full working directory path",
+			fmt.Sprintf("You specified the %s working_directory which could not be resolved into an absolute path: %s", entrypointPath, err),
+		)
+		return
+	}
+
+	buildArgs.AbsWorkingDir = absWorkingDirectory
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -164,6 +187,38 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
+	if len(result.Warnings) >= 1 {
+		for _, message := range result.Warnings {
+			detail := ""
+
+			if message.Location != nil {
+				detail = detail + formatLocation(message.Location) + "\n\n"
+			}
+
+			for _, note := range message.Notes {
+				if note.Location != nil {
+					detail = detail + "\n" + fmt.Sprintf("%s: %s", formatLocation(note.Location), note.Text)
+				} else {
+					detail = detail + "\n" + note.Text
+				}
+			}
+
+			resp.Diagnostics.AddWarning(
+				fmt.Sprintf("esbuild error: %s", message.Text),
+				detail,
+			)
+		}
+	}
+
+	//outputFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to create temporary file for bundle output",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//	return
+	//}
+
 	packageFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -176,7 +231,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		_ = packageFile.Close()
 	}(packageFile)
 
-	zipWriter := zip.NewWriter(outputFile)
+	zipWriter := zip.NewWriter(packageFile)
 
 	indexDotJs, err := zipWriter.CreateHeader(&zip.FileHeader{
 		Name:     "index.js",
@@ -192,8 +247,17 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	_, err = io.Copy(indexDotJs, packageFile)
+	//outputFileAfterEsbuildRun, err := os.Open(outputFilePath)
+	//
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to open ESBuild bundle",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//	return
+	//}
 
+	_, err = indexDotJs.Write(result.OutputFiles[0].Contents)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to compress Lambda bundle into zip",
@@ -201,6 +265,16 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		)
 		return
 	}
+
+	//_, err = io.Copy(indexDotJs, result.OutputFiles[0].Contents)
+	//
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to compress Lambda bundle into zip",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//	return
+	//}
 
 	err = zipWriter.Close()
 
@@ -212,7 +286,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	res, err := os.ReadFile(outputFile.Name())
+	res, err := os.ReadFile(packageFile.Name())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -225,16 +299,16 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	hash := sha256.Sum256(res)
 	encodedHash := base64.StdEncoding.EncodeToString(hash[:])
 
-	data.Filename = types.StringValue(outputFile.Name())
+	data.Filename = types.StringValue(packageFile.Name())
 	data.SourceCodeHash = types.StringValue(encodedHash)
 
-	err = os.Remove(packageFile.Name())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to clean up Lambda bundle file",
-			fmt.Sprintf("Error: %s", err),
-		)
-	}
+	//err = os.Remove(packageFile.Name())
+	//if err != nil {
+	//	resp.Diagnostics.AddError(
+	//		"Failed to clean up Lambda bundle file",
+	//		fmt.Sprintf("Error: %s", err),
+	//	)
+	//}
 
 	//err = os.Remove(outputFile.Name())
 	//if err != nil {
