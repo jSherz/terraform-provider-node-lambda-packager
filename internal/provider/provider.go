@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-package internal
+package provider
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
 	"os/exec"
-	"terraform-provider-lambda-packager/internal/datasources"
 	"terraform-provider-lambda-packager/internal/packager"
 
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -30,7 +29,7 @@ type EsbuildLambdaPackagerProviderModel struct {
 }
 
 func (p *EsbuildLambdaPackagerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "esbuild-lambda-packager"
+	resp.TypeName = "lambdapackager"
 	resp.Version = p.version
 }
 
@@ -104,7 +103,7 @@ func (p *EsbuildLambdaPackagerProvider) Resources(ctx context.Context) []func() 
 
 func (p *EsbuildLambdaPackagerProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		datasources.NewLambdaPackageDataSource,
+		NewLambdaPackageDataSource,
 	}
 }
 

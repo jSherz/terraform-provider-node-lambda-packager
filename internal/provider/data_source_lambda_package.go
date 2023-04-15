@@ -1,7 +1,7 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-package datasources
+package provider
 
 import (
 	"archive/zip"
@@ -112,24 +112,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	//outputFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to create temporary file for bundle output",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//	return
-	//}
-	//outputFilePath := outputFile.Name()
-	//err = outputFile.Close()
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to close temporary bundle output file",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//	return
-	//}
-
 	rawArgs := data.Args.Elements()
 	var args []string
 	for _, rawArg := range rawArgs {
@@ -140,6 +122,13 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	args = append(args, fullEntrypointPath)
 
 	buildArgs, err := cli.ParseBuildOptions(args)
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to parse build options",
+			fmt.Sprintf("Error: %s", err),
+		)
+	}
 
 	workingDirectory := data.WorkingDirectory.ValueString()
 	absWorkingDirectory, err := filepath.Abs(workingDirectory)
@@ -153,13 +142,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	buildArgs.AbsWorkingDir = absWorkingDirectory
-
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to parse build options",
-			fmt.Sprintf("Error: %s", err),
-		)
-	}
 
 	result := api.Build(buildArgs)
 
@@ -210,15 +192,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		}
 	}
 
-	//outputFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to create temporary file for bundle output",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//	return
-	//}
-
 	packageFile, err := os.CreateTemp("", "esbuild-lambda-packager-*")
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -247,16 +220,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	//outputFileAfterEsbuildRun, err := os.Open(outputFilePath)
-	//
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to open ESBuild bundle",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//	return
-	//}
-
 	_, err = indexDotJs.Write(result.OutputFiles[0].Contents)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -265,16 +228,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		)
 		return
 	}
-
-	//_, err = io.Copy(indexDotJs, result.OutputFiles[0].Contents)
-	//
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to compress Lambda bundle into zip",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//	return
-	//}
 
 	err = zipWriter.Close()
 
@@ -301,22 +254,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	data.Filename = types.StringValue(packageFile.Name())
 	data.SourceCodeHash = types.StringValue(encodedHash)
-
-	//err = os.Remove(packageFile.Name())
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to clean up Lambda bundle file",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//}
-
-	//err = os.Remove(outputFile.Name())
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		"Failed to cleanup Lambda package file",
-	//		fmt.Sprintf("Error: %s", err),
-	//	)
-	//}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
