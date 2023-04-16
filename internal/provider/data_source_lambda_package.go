@@ -103,7 +103,8 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	_, err = os.Stat(fullEntrypointPath)
+	statRes, err := os.Stat(fullEntrypointPath)
+	fmt.Println(statRes)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Could not find entrypoint file",
