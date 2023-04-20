@@ -18,22 +18,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ provider.Provider = &EsbuildLambdaPackagerProvider{}
+var _ provider.Provider = &NodeLambdaPackagerProvider{}
 
-type EsbuildLambdaPackagerProvider struct {
+type NodeLambdaPackagerProvider struct {
 	version string
 }
 
-type EsbuildLambdaPackagerProviderModel struct {
+type NodeLambdaPackagerProviderModel struct {
 	EsbuildBinary types.String `tfsdk:"esbuild_binary"`
 }
 
-func (p *EsbuildLambdaPackagerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "lambdapackager"
+func (p *NodeLambdaPackagerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "node-lambda-packager"
 	resp.Version = p.version
 }
 
-func (p *EsbuildLambdaPackagerProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *NodeLambdaPackagerProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"esbuild_binary": &schema.StringAttribute{
@@ -43,8 +43,8 @@ func (p *EsbuildLambdaPackagerProvider) Schema(ctx context.Context, req provider
 	}
 }
 
-func (p *EsbuildLambdaPackagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data EsbuildLambdaPackagerProviderModel
+func (p *NodeLambdaPackagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data NodeLambdaPackagerProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -97,11 +97,11 @@ func (p *EsbuildLambdaPackagerProvider) Configure(ctx context.Context, req provi
 	resp.DataSourceData = client
 }
 
-func (p *EsbuildLambdaPackagerProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *NodeLambdaPackagerProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{}
 }
 
-func (p *EsbuildLambdaPackagerProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *NodeLambdaPackagerProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewLambdaPackageDataSource,
 	}
@@ -109,7 +109,7 @@ func (p *EsbuildLambdaPackagerProvider) DataSources(ctx context.Context) []func(
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &EsbuildLambdaPackagerProvider{
+		return &NodeLambdaPackagerProvider{
 			version: version,
 		}
 	}

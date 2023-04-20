@@ -2,61 +2,61 @@
 # SPDX-License-Identifier: MPL-2.0
 
 terraform {
+  required_version = "~> 1.3"
+
   required_providers {
-    hashicups = {
-      versions = "0.3.1"
-      source = "hashicorp.com/edu/hashicups"
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.60"
+    }
+    node-lambda-packager = {
+      source  = "jsherz.com/tf/node-lambda-packager"
+      version = "1.0.0"
     }
   }
 }
 
-provider "hashicups" {
-  username = "education"
-  password = "test123"
+provider "node-lambda-packager" {}
+
+data "node-lambda-packager_package" "this" {
+  args = [
+    "--bundle",
+    "--external:@aws-sdk*",
+    "--external:@aws-lambda-powertools*",
+    "--minify",
+    "--platform=node",
+    "--sourcemap",
+    "--target=es2021",
+    "--sourcemap=inline",
+  ]
+
+  entrypoint        = var.entrypoint
+  working_directory = var.working_directory
 }
 
-module "psl" {
-  source = "./coffee"
+resource "aws_lambda_function" "this" {
+  function_name    = var.name
+  role             = aws_iam_role.this.arn
+  architectures    = ["arm64"]
+  description      = var.description
+  handler          = "index.handler"
+  memory_size      = var.memory_size
+  runtime          = "nodejs18.x"
+  filename         = data.node-lambda-packager_package.this.filename
+  source_code_hash = data.node-lambda-packager_package.this.source_code_hash
 
-  coffee_name = "Packer Spiced Latte"
-}
+  reserved_concurrent_executions = var.reserved_concurrent_executions
 
-output "psl" {
-  value = module.psl.coffee
-}
-
-data "hashicups_order" "order" {
-  id = 1
-}
-
-output "order" {
-  value = data.hashicups_order.order
-}
-
-resource "hashicups_order" "edu" {
-  items {
-    coffee {
-      id = 3
-    }
-    quantity = 2
+  environment {
+    variables = var.env_vars
   }
-  items {
-    coffee {
-      id = 2
-    }
-    quantity = 3
+
+  layers = [
+    # See: https://awslabs.github.io/aws-lambda-powertools-typescript/latest/
+    "arn:aws:lambda:${data.aws_region.this.name}:094274105915:layer:AWSLambdaPowertoolsTypeScript:10",
+  ]
+
+  tracing_config {
+    mode = "Active"
   }
-}
-
-output "edu_order" {
-  value = hashicups_order.edu
-}
-
-
-data "hashicups_order" "first" {
-  id = 1
-}
-
-output "first_order" {
-  value = data.hashicups_order.first
 }

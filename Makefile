@@ -1,7 +1,7 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=jsherz.com
 NAMESPACE=tf
-NAME=esbuild-lambda-packager
+NAME=node-lambda-packager
 BINARY=terraform-provider-${NAME}
 VERSION=1.0.0
 OS_ARCH=linux_amd64
