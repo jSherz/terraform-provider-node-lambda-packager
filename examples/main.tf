@@ -10,7 +10,7 @@ terraform {
       version = "~> 4.60"
     }
     node-lambda-packager = {
-      source  = "jsherz.com/tf/node-lambda-packager"
+      source  = "jsherz/node-lambda-packager"
       version = "1.0.0"
     }
   }
