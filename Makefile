@@ -1,6 +1,5 @@
 TEST?=$$(go list ./... | grep -v 'vendor')
-HOSTNAME=jsherz.com
-NAMESPACE=tf
+HOSTNAME=jsherz
 NAME=node-lambda-packager
 BINARY=terraform-provider-${NAME}
 VERSION=1.0.0
@@ -15,8 +14,8 @@ release:
 	goreleaser release --clean --snapshot --skip-publish  --skip-sign
 
 install: build
-	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
-	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/${HOSTNAME}/${NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/registry.terraform.io/${HOSTNAME}/${NAME}/${VERSION}/${OS_ARCH}
 
 test: 
 	go test -i $(TEST) || exit 1                                                   
