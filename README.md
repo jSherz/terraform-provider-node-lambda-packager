@@ -4,7 +4,10 @@ This Terraform provider helps you to co-locate your Lambda application code
 with your Infrastructure as Code (IaC). It uses esbuild to produce a bundle
 that's then zipped up and made ready for Terraform to consume.
 
-See `./examples` for practical usage.
+See [jSherz/automate-aws-access-removal] for an example of this provider in
+use.
+
+[jSherz/automate-aws-access-removal]: https://github.com/jSherz/automate-aws-access-removal
 
 ## Build
 

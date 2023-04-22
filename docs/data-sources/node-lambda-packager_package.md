@@ -88,6 +88,7 @@ resource "aws_lambda_function" "my_function" {
 ### Read-Only
 
 - `filename` (String) Path to the packaged lambda zip.
+- `id` (String) Unused - see source_code_hash
 - `source_code_hash` (String) Source code hash of the built package.
 
 
