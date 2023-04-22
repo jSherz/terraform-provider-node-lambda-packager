@@ -16,8 +16,7 @@ type NodeLambdaPackagerProvider struct {
 	version string
 }
 
-type NodeLambdaPackagerProviderModel struct {
-}
+type NodeLambdaPackagerProviderModel struct{}
 
 var _ provider.Provider = &NodeLambdaPackagerProvider{
 	version: "0.0.2",
