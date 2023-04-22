@@ -1,6 +1,7 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
+// Package provider builds the Terraform provider. See the README for usage.
 package provider
 
 import (
@@ -9,24 +10,18 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/evanw/esbuild/pkg/cli"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	schema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
-	"path/filepath"
-	"time"
 )
 
-var _ datasource.DataSource = &LambdaPackageDataSource{}
-
-func NewLambdaPackageDataSource() datasource.DataSource {
-	return &LambdaPackageDataSource{}
-}
-
-type LambdaPackageDataSource struct {
-}
+type LambdaPackageDataSource struct{}
 
 type LambdaPackageDataSourceModel struct {
 	Args             types.List   `tfsdk:"args"`
@@ -34,6 +29,12 @@ type LambdaPackageDataSourceModel struct {
 	WorkingDirectory types.String `tfsdk:"working_directory"`
 	Filename         types.String `tfsdk:"filename"`
 	SourceCodeHash   types.String `tfsdk:"source_code_hash"`
+}
+
+var _ datasource.DataSource = &LambdaPackageDataSource{}
+
+func NewLambdaPackageDataSource() datasource.DataSource {
+	return &LambdaPackageDataSource{}
 }
 
 func (d *LambdaPackageDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -94,36 +95,38 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	entrypointPath := data.Entrypoint.ValueString()
 	fullEntrypointPath, err := filepath.Abs(entrypointPath)
-
 	if err != nil {
+		//nolint:lll // needs a descriptive error
 		resp.Diagnostics.AddError(
 			"Could not find find the full entrypoint path",
 			fmt.Sprintf("You specified the %s entrypoint which could not be resolved into an absolute path: %s", entrypointPath, err),
 		)
+
 		return
 	}
 
-	statRes, err := os.Stat(fullEntrypointPath)
-	fmt.Println(statRes)
+	_, err = os.Stat(fullEntrypointPath)
 	if err != nil {
+		//nolint:lll // needs a descriptive error
 		resp.Diagnostics.AddError(
 			"Could not find entrypoint file",
 			fmt.Sprintf("You specified the %s entrypoint which was resolved to %s and we could not find the file or do not have permission to view it: %s", entrypointPath, fullEntrypointPath, err),
 		)
+
 		return
 	}
 
 	rawArgs := data.Args.Elements()
-	var args []string
+
+	args := make([]string, 0, len(rawArgs))
 	for _, rawArg := range rawArgs {
+		//nolint:forcetypeassert // we define these as strings
 		args = append(args, (rawArg.(types.String)).ValueString())
 	}
 
-	//args = append(args, fmt.Sprintf("--outfile=%s", outputFilePath))
 	args = append(args, fullEntrypointPath)
 
 	buildArgs, err := cli.ParseBuildOptions(args)
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to parse build options",
@@ -132,13 +135,15 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	workingDirectory := data.WorkingDirectory.ValueString()
-	absWorkingDirectory, err := filepath.Abs(workingDirectory)
 
+	absWorkingDirectory, err := filepath.Abs(workingDirectory)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Could not find find the full working directory path",
+			//nolint:lll // needs a descriptive error
 			fmt.Sprintf("You specified the %s working_directory which could not be resolved into an absolute path: %s", entrypointPath, err),
 		)
+
 		return
 	}
 
@@ -167,6 +172,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 				detail,
 			)
 		}
+
 		return
 	}
 
@@ -199,25 +205,28 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 			"Failed to create temporary file for packaged Lambda",
 			fmt.Sprintf("Error: %s", err),
 		)
+
 		return
 	}
+
 	defer func(packageFile *os.File) {
 		_ = packageFile.Close()
 	}(packageFile)
 
 	zipWriter := zip.NewWriter(packageFile)
 
+	//nolint:exhaustruct // too many props to be useful
 	indexDotJs, err := zipWriter.CreateHeader(&zip.FileHeader{
 		Name:     "index.js",
 		Method:   zip.Deflate,
 		Modified: time.Date(2020, 8, 31, 0, 0, 0, 0, time.UTC),
 	})
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to create ZIP with our Lambda bundle",
 			fmt.Sprintf("Error: %s", err),
 		)
+
 		return
 	}
 
@@ -227,6 +236,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 			"Failed to compress Lambda bundle into zip",
 			fmt.Sprintf("Error: %s", err),
 		)
+
 		return
 	}
 
@@ -237,16 +247,17 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 			"Failed to close Lambda package zip",
 			fmt.Sprintf("Error: %s", err),
 		)
+
 		return
 	}
 
 	res, err := os.ReadFile(packageFile.Name())
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to read back Lambda package zip to hash it",
 			fmt.Sprintf("Error: %s", err),
 		)
+
 		return
 	}
 

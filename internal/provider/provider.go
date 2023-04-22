@@ -5,20 +5,13 @@ package provider
 
 import (
 	"context"
-	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	diag2 "github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"os"
-	"os/exec"
-	"terraform-provider-lambda-packager/internal/packager"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-var _ provider.Provider = &NodeLambdaPackagerProvider{}
 
 type NodeLambdaPackagerProvider struct {
 	version string
@@ -28,21 +21,30 @@ type NodeLambdaPackagerProviderModel struct {
 	EsbuildBinary types.String `tfsdk:"esbuild_binary"`
 }
 
+var _ provider.Provider = &NodeLambdaPackagerProvider{
+	version: "0.0.2",
+}
+
+//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "node-lambda-packager"
 	resp.Version = p.version
 }
 
+//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	description := "Helps you to co-locate your Lambda application code with your IaC, using esbuild to bundle your Lambda code."
+
 	resp.Schema = schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			"esbuild_binary": &schema.StringAttribute{
-				Optional: true,
-			},
-		},
+		Attributes:          map[string]schema.Attribute{},
+		Blocks:              map[string]schema.Block{},
+		Description:         description,
+		MarkdownDescription: description,
+		DeprecationMessage:  "",
 	}
 }
 
+//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var data NodeLambdaPackagerProviderModel
 
@@ -51,50 +53,6 @@ func (p *NodeLambdaPackagerProvider) Configure(ctx context.Context, req provider
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	esbuildBinary := "esbuild"
-
-	overrideEsbuildBinary := data.EsbuildBinary.ValueString()
-
-	if overrideEsbuildBinary == "" {
-		overrideEsbuildBinary = os.Getenv("LAMBDA_PACKAGER_ESBUILD_BINARY")
-	}
-
-	if overrideEsbuildBinary != "" {
-		esbuildBinary = overrideEsbuildBinary
-
-		overrideEsbuildBinaryStat, err := os.Stat(esbuildBinary)
-
-		if err != nil {
-			resp.Diagnostics.Append(diag2.NewErrorDiagnostic(
-				"An override esbuild_binary was set and is invalid",
-				fmt.Sprintf("You specified the %s esbuild_binary and we could not find the file or do not have permission to view it: %s", esbuildBinary, err),
-			))
-			return
-		}
-
-		if overrideEsbuildBinaryStat.IsDir() {
-			resp.Diagnostics.Append(
-				diag2.NewErrorDiagnostic("An override esbuild_binary was set and is invalid",
-					fmt.Sprintf("You specified the %s esbuild_binary and it's a directory, not a file.", esbuildBinary),
-				))
-			return
-		}
-	} else {
-		_, err := exec.LookPath(esbuildBinary)
-
-		if err != nil {
-			resp.Diagnostics.Append(
-				diag2.NewErrorDiagnostic("Could not find the esbuild binary",
-					fmt.Sprintf("Could not find the esbuild binary. Is it installed and in your path? Error: %s", err),
-				))
-			return
-		}
-	}
-
-	client := packager.NewPackager(esbuildBinary)
-	resp.ResourceData = client
-	resp.DataSourceData = client
 }
 
 func (p *NodeLambdaPackagerProvider) Resources(ctx context.Context) []func() resource.Resource {
