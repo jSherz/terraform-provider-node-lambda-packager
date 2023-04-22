@@ -96,6 +96,13 @@ linters-settings:
     # Default: 30 (but we recommend 10-20)
     min-complexity: 10
 
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - stdlib
+      - github.com/hashicorp/terraform-plugin-framework/datasource.DataSource
 
   revive:
     rules:
@@ -111,9 +118,11 @@ linters:
   disable:
     - deadcode
     - exhaustivestruct
+    - goimports
     - golint
     - ifshort
     - interfacer
+    - lll
     - maligned
     - nosnakecase
     - paralleltest
@@ -142,7 +151,6 @@ issues:
         - exhaustruct
         - gocyclo
         - gosec
-        - lll
 
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via `nolint` comments.

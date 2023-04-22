@@ -2,12 +2,12 @@ package provider_test
 
 import (
 	"regexp"
-	"terraform-provider-lambda-packager/internal/provider"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jSherz/terraform-provider-node-lambda-packager/internal/provider"
 )
 
 // Entrypoint file does not exist.

@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"terraform-provider-lambda-packager/internal/provider"
+	"github.com/jSherz/terraform-provider-node-lambda-packager/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website

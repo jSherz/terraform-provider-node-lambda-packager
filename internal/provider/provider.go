@@ -25,13 +25,11 @@ var _ provider.Provider = &NodeLambdaPackagerProvider{
 	version: "0.0.2",
 }
 
-//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "node-lambda-packager"
 	resp.Version = p.version
 }
 
-//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	description := "Helps you to co-locate your Lambda application code with your IaC, using esbuild to bundle your Lambda code."
 
@@ -44,7 +42,6 @@ func (p *NodeLambdaPackagerProvider) Schema(ctx context.Context, req provider.Sc
 	}
 }
 
-//nolint:lll // required types
 func (p *NodeLambdaPackagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var data NodeLambdaPackagerProviderModel
 

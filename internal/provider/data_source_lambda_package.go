@@ -42,28 +42,37 @@ func (d *LambdaPackageDataSource) Metadata(ctx context.Context, req datasource.M
 }
 
 func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	const description = "Uses ebsuild to package a Lambda function and make it ready for aws_lambda_function."
+
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Example data source",
+		Description:         description,
+		MarkdownDescription: description,
+		Blocks:              map[string]schema.Block{},
+		DeprecationMessage:  "",
 
 		Attributes: map[string]schema.Attribute{
+			//nolint:exhaustruct // too many props to be useful
 			"args": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    true,
 				Description: "Arguments to pass to esbuild.",
 			},
+			//nolint:exhaustruct // too many props to be useful
 			"entrypoint": schema.StringAttribute{
 				Required:    true,
 				Description: "Path to lambda function entrypoint.",
 			},
+			//nolint:exhaustruct // too many props to be useful
 			"working_directory": schema.StringAttribute{
 				Required:    true,
 				Description: "Typically the folder containing the package.json at the root of your Lambda project.",
 			},
+			//nolint:exhaustruct // too many props to be useful
 			"filename": schema.StringAttribute{
 				Computed:    true,
 				Description: "Path to the packaged lambda zip.",
 			},
+			//nolint:exhaustruct // too many props to be useful
 			"source_code_hash": schema.StringAttribute{
 				Computed:    true,
 				Description: "Source code hash of the built package.",
@@ -83,6 +92,7 @@ func (d *LambdaPackageDataSource) Configure(ctx context.Context, req datasource.
 	}
 }
 
+//nolint:cyclop,funlen,gocognit,gocyclo // needs refactoring after tests are complete
 func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data LambdaPackageDataSourceModel
 
@@ -94,9 +104,9 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	entrypointPath := data.Entrypoint.ValueString()
+
 	fullEntrypointPath, err := filepath.Abs(entrypointPath)
 	if err != nil {
-		//nolint:lll // needs a descriptive error
 		resp.Diagnostics.AddError(
 			"Could not find find the full entrypoint path",
 			fmt.Sprintf("You specified the %s entrypoint which could not be resolved into an absolute path: %s", entrypointPath, err),
@@ -107,7 +117,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	_, err = os.Stat(fullEntrypointPath)
 	if err != nil {
-		//nolint:lll // needs a descriptive error
 		resp.Diagnostics.AddError(
 			"Could not find entrypoint file",
 			fmt.Sprintf("You specified the %s entrypoint which was resolved to %s and we could not find the file or do not have permission to view it: %s", entrypointPath, fullEntrypointPath, err),
@@ -140,7 +149,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Could not find find the full working directory path",
-			//nolint:lll // needs a descriptive error
 			fmt.Sprintf("You specified the %s working_directory which could not be resolved into an absolute path: %s", entrypointPath, err),
 		)
 
