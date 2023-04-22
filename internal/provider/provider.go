@@ -10,16 +10,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type NodeLambdaPackagerProvider struct {
 	version string
 }
 
-type NodeLambdaPackagerProviderModel struct {
-	EsbuildBinary types.String `tfsdk:"esbuild_binary"`
-}
+type NodeLambdaPackagerProviderModel struct{}
 
 var _ provider.Provider = &NodeLambdaPackagerProvider{
 	version: "0.0.2",
