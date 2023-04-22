@@ -41,3 +41,5 @@ terraform
 
 .vscode/
 .idea/
+
+terraform-provider-node-lambda-packager
