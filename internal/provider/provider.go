@@ -37,7 +37,7 @@ func (p *NodeLambdaPackagerProvider) Schema(ctx context.Context, req provider.Sc
 		Attributes:          map[string]schema.Attribute{},
 		Blocks:              map[string]schema.Block{},
 		Description:         description,
-		MarkdownDescription: description,
+		MarkdownDescription: description + "\n\n## Example Usage\n\n" + "```terraform\n" + "provider \"node-lambda-packager\" {}\n```",
 		DeprecationMessage:  "",
 	}
 }

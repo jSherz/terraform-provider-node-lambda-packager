@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/evanw/esbuild/pkg/api"
@@ -31,6 +32,46 @@ type LambdaPackageDataSourceModel struct {
 	SourceCodeHash   types.String `tfsdk:"source_code_hash"`
 }
 
+const descriptionPrefix = "Uses ebsuild to package a Lambda function and make it ready for"
+
+const description = descriptionPrefix + " AWS."
+
+const markdownDescription = descriptionPrefix + " [aws_lambda_function](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function).\n\n" +
+	`## Example Usage
+
+BACKTICKBACKTICKBACKTICKterraform
+data "node-lambda-packager_package" "my_function" {
+  args = [
+    "--bundle",
+    # Here's an example package that is provided by the runtime (NodeJS 18)
+    "--external:@aws-sdk*",
+    # Here's an example package that might be provided by a layer
+    "--external:@aws-lambda-powertools*",
+    "--minify",
+    "--platform=node",
+    "--sourcemap",
+    # This must be appropriate for the Node version you choose
+    "--target=es2021",
+    "--sourcemap=inline",
+  ]
+
+  # Try co-locating your Lambda code and Terraform in one project
+  entrypoint        = "../lambda/src/handlers/user-deleted-listener/index.ts"
+  working_directory = "../lambda"
+}
+
+resource "aws_lambda_function" "my_function" {
+  function_name    = "my-function"
+  role             = aws_iam_role.this.arn
+  handler          = "index.handler"
+  memory_size      = 128
+  runtime          = "nodejs18.x"
+  filename         = data.node-lambda-packager_package.my_function.filename
+  source_code_hash = data.node-lambda-packager_package.my_function.source_code_hash
+}
+BACKTICKBACKTICKBACKTICK
+`
+
 var _ datasource.DataSource = &LambdaPackageDataSource{}
 
 func NewLambdaPackageDataSource() datasource.DataSource {
@@ -42,11 +83,9 @@ func (d *LambdaPackageDataSource) Metadata(ctx context.Context, req datasource.M
 }
 
 func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	const description = "Uses ebsuild to package a Lambda function and make it ready for aws_lambda_function."
-
 	resp.Schema = schema.Schema{
 		Description:         description,
-		MarkdownDescription: description,
+		MarkdownDescription: strings.ReplaceAll(markdownDescription, "BACKTICK", "`"),
 		Blocks:              map[string]schema.Block{},
 		DeprecationMessage:  "",
 
