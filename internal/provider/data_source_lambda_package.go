@@ -26,7 +26,7 @@ import (
 type LambdaPackageDataSource struct{}
 
 type LambdaPackageDataSourceModel struct {
-	Id               types.String `tfsdk:"id"`
+	ID               types.String `tfsdk:"id"`
 	Args             types.List   `tfsdk:"args"`
 	Entrypoint       types.String `tfsdk:"entrypoint"`
 	WorkingDirectory types.String `tfsdk:"working_directory"`
@@ -74,6 +74,8 @@ resource "aws_lambda_function" "my_function" {
 BACKTICKBACKTICKBACKTICK
 `
 
+const currentUserRead = 0o600
+
 var _ datasource.DataSource = &LambdaPackageDataSource{}
 
 func NewLambdaPackageDataSource() datasource.DataSource {
@@ -92,8 +94,8 @@ func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.Sch
 		DeprecationMessage:  "",
 
 		Attributes: map[string]schema.Attribute{
+			//nolint:exhaustruct // too many props to be useful
 			"id": schema.StringAttribute{
-				//nolint:exhaustruct // too many props to be useful
 				MarkdownDescription: "Unused - see source_code_hash",
 				Computed:            true,
 			},
@@ -325,7 +327,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		strings.ReplaceAll(filepath.Base(entrypointPath), filepath.Ext(entrypointPath), "")+"-package.zip",
 	)
 
-	err = os.WriteFile(finalOutputPath, res, 0644)
+	err = os.WriteFile(finalOutputPath, res, currentUserRead)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Failed to write final output file (%s)", finalOutputPath),
@@ -337,7 +339,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	data.Filename = types.StringValue(finalOutputPath)
 	data.SourceCodeHash = types.StringValue(encodedHash)
-	data.Id = data.SourceCodeHash
+	data.ID = data.SourceCodeHash
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

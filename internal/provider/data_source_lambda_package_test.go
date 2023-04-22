@@ -1,15 +1,15 @@
 package provider_test
 
 import (
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/jSherz/terraform-provider-node-lambda-packager/internal/provider"
+	"github.com/stretchr/testify/assert"
 )
 
 // Entrypoint file does not exist.
