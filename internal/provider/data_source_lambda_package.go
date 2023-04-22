@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ import (
 type LambdaPackageDataSource struct{}
 
 type LambdaPackageDataSourceModel struct {
+	Id               types.String `tfsdk:"id"`
 	Args             types.List   `tfsdk:"args"`
 	Entrypoint       types.String `tfsdk:"entrypoint"`
 	WorkingDirectory types.String `tfsdk:"working_directory"`
@@ -90,6 +92,11 @@ func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.Sch
 		DeprecationMessage:  "",
 
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				//nolint:exhaustruct // too many props to be useful
+				MarkdownDescription: "Unused - see source_code_hash",
+				Computed:            true,
+			},
 			//nolint:exhaustruct // too many props to be useful
 			"args": schema.ListAttribute{
 				ElementType: types.StringType,
@@ -177,9 +184,11 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	buildArgs, err := cli.ParseBuildOptions(args)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Failed to parse build options",
+			"Failed to parse esbuild options",
 			fmt.Sprintf("Error: %s", err),
 		)
+
+		return
 	}
 
 	workingDirectory := data.WorkingDirectory.ValueString()
@@ -311,8 +320,24 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	hash := sha256.Sum256(res)
 	encodedHash := base64.StdEncoding.EncodeToString(hash[:])
 
-	data.Filename = types.StringValue(packageFile.Name())
+	finalOutputPath := path.Join(
+		filepath.Dir(entrypointPath),
+		strings.ReplaceAll(filepath.Base(entrypointPath), filepath.Ext(entrypointPath), "")+"-package.zip",
+	)
+
+	err = os.WriteFile(finalOutputPath, res, 0644)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Failed to write final output file (%s)", finalOutputPath),
+			fmt.Sprintf("Error: %s", err),
+		)
+
+		return
+	}
+
+	data.Filename = types.StringValue(finalOutputPath)
 	data.SourceCodeHash = types.StringValue(encodedHash)
+	data.Id = data.SourceCodeHash
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -1,0 +1,9 @@
+{
+  "name": "node-lambda-packager-example",
+  "scripts": {},
+  "devDependencies": {},
+  "dependencies": {},
+  "engines": {
+    "node": "18"
+  }
+}

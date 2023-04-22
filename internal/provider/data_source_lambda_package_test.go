@@ -1,6 +1,8 @@
 package provider_test
 
 import (
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
 
@@ -36,21 +38,76 @@ data "node-lambda-packager_package" "test" {
 
 // Unrecognized arguments.
 func TestAccPackageDataSourceEsbuildBadArgs(t *testing.T) {
-	t.Skipped()
+	const config = `
+data "node-lambda-packager_package" "test" {
+  args              = ["--bundle", "--lemons"]
+  entrypoint        = "../../examples/src/handler/index.ts"
+  working_directory = "../../examples"
 }
+`
 
-func TestAccPackageDataSourceGettingWorkingDirectoryAbsolutePathFailed(t *testing.T) {
-	t.Skipped()
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"node-lambda-packager": providerserver.NewProtocol6WithError(provider.New("test")()),
+		},
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile("Failed to parse esbuild options"),
+			},
+		},
+	})
 }
 
 func TestAccPackageDataSourceEsbuildReturnedErrors(t *testing.T) {
-	t.Skipped()
+	const config = `
+data "node-lambda-packager_package" "test" {
+  args              = ["--bundle", "--lemons"]
+  entrypoint        = "../../examples/src/handler/index.ts"
+  working_directory = "../../examples"
 }
+`
 
-func TestAccPackageDataSourceEsbuildReturnedWarnings(t *testing.T) {
-	t.Skipped()
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"node-lambda-packager": providerserver.NewProtocol6WithError(provider.New("test")()),
+		},
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile("Failed to parse esbuild options"),
+			},
+		},
+	})
 }
 
 func TestAccPackageDataSourceBuildsDeterministicZip(t *testing.T) {
-	t.Skipped()
+	const config = `
+data "node-lambda-packager_package" "test" {
+  args              = ["--bundle"]
+  entrypoint        = "../../examples/src/handler/index.ts"
+  working_directory = "../../examples"
+}
+`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"node-lambda-packager": providerserver.NewProtocol6WithError(provider.New("test")()),
+		},
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: config,
+				Check: func(state *terraform.State) error {
+					hash := state.RootModule().Resources["data.node-lambda-packager_package.test"].Primary.Attributes["source_code_hash"]
+
+					assert.Equal(t, "C6uJvTtKHacNdL1OJNa500w9pqArEHyfNlLE0n/jJ44=", hash)
+
+					return nil
+				},
+			},
+		},
+	})
 }
