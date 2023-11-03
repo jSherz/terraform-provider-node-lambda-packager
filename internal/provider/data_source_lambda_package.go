@@ -117,6 +117,7 @@ func (d *LambdaPackageDataSource) Schema(ctx context.Context, req datasource.Sch
 			},
 			//nolint:exhaustruct // too many props to be useful
 			"filename": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "Path to the packaged lambda zip.",
 			},
@@ -322,10 +323,15 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	hash := sha256.Sum256(res)
 	encodedHash := base64.StdEncoding.EncodeToString(hash[:])
 
-	finalOutputPath := path.Join(
-		filepath.Dir(entrypointPath),
-		strings.ReplaceAll(filepath.Base(entrypointPath), filepath.Ext(entrypointPath), "")+"-package.zip",
-	)
+	var finalOutputPath string
+	if data.Filename.IsNull() {
+		finalOutputPath = path.Join(
+			filepath.Dir(entrypointPath),
+			strings.ReplaceAll(filepath.Base(entrypointPath), filepath.Ext(entrypointPath), "")+"-package.zip",
+		)
+	} else {
+		finalOutputPath = data.Filename.ValueString()
+	}
 
 	err = os.WriteFile(finalOutputPath, res, currentUserRead)
 	if err != nil {
