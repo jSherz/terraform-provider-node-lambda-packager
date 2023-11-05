@@ -2,7 +2,7 @@ TEST?=$$(go list ./... | grep -v 'vendor')
 HOSTNAME=jsherz
 NAME=node-lambda-packager
 BINARY=terraform-provider-${NAME}
-VERSION=1.1.1
+VERSION=1.2.0
 OS_ARCH=linux_amd64
 
 default: install
