@@ -11,7 +11,7 @@ build:
 	go build -o ${BINARY}
 
 release:
-	goreleaser release --clean --snapshot --skip-publish  --skip-sign
+	goreleaser release --clean --snapshot --skip publish,sign
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/${HOSTNAME}/${NAME}/${VERSION}/${OS_ARCH}
