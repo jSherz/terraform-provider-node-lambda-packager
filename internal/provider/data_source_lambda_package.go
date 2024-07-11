@@ -300,7 +300,6 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	err = zipWriter.Close()
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to close Lambda package zip",

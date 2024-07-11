@@ -116,19 +116,13 @@ linters:
   # Disable specific linter
   # https://golangci-lint.run/usage/linters/#disabled-by-default
   disable:
-    - deadcode
-    - exhaustivestruct
+    - depguard
+    - execinquery
     - goimports
-    - golint
-    - ifshort
-    - interfacer
+    - gomnd
     - lll
-    - maligned
-    - nosnakecase
     - paralleltest
-    - scopelint
-    - structcheck
-    - varcheck
+    - perfsprint
 
 issues:
   # List of regexps of issue texts to exclude.
