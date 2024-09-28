@@ -1,7 +1,8 @@
 module github.com/jSherz/terraform-provider-node-lambda-packager
 
-go 1.22
-toolchain go1.22.5
+go 1.22.0
+
+toolchain go1.23.1
 
 require (
 	github.com/evanw/esbuild v0.24.0
