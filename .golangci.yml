@@ -23,7 +23,7 @@ linters-settings:
   cyclop:
     # The maximal code complexity to report.
     # Default: 10
-    # max-complexity: 10
+    max-complexity: 10
     # The maximal average package complexity.
     # If it's higher than 0.0 (float) the check is enabled
     # Default: 0.0
@@ -72,9 +72,6 @@ linters-settings:
       # Optionally put comments at the end of the regex, surrounded by `(# )?`
       # Escape any special characters.
       - 'fmt\.Print.*(# Do not commit print statements\.)?'
-    # Exclude godoc examples from forbidigo checks.
-    # Default: true
-    exclude_godoc_examples: false
 
   funlen:
     # Checks the number of lines in a function.
@@ -117,9 +114,7 @@ linters:
   # https://golangci-lint.run/usage/linters/#disabled-by-default
   disable:
     - depguard
-    - execinquery
     - goimports
-    - gomnd
     - lll
     - paralleltest
     - perfsprint
