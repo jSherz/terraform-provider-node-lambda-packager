@@ -8,6 +8,7 @@ linters:
     - lll
     - paralleltest
     - perfsprint
+    - wsl
   settings:
     cyclop:
       max-complexity: 10
@@ -49,6 +50,10 @@ linters:
       rules:
         - name: exported
           disabled: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     rules:

@@ -13,12 +13,12 @@ jobs:
     steps:
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.25'
           cache: false
       - uses: actions/checkout@v6
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: v2.7.2
 
           args: --timeout=5m
