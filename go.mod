@@ -3,7 +3,7 @@ module github.com/jSherz/terraform-provider-node-lambda-packager
 go 1.25.5
 
 require (
-	github.com/evanw/esbuild v0.27.1
+	github.com/evanw/esbuild v0.27.2
 	github.com/hashicorp/terraform-plugin-docs v0.24.0
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	github.com/hashicorp/terraform-plugin-go v0.29.0
