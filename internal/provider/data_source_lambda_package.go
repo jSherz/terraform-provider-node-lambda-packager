@@ -332,6 +332,7 @@ func (d *LambdaPackageDataSource) Read(ctx context.Context, req datasource.ReadR
 		finalOutputPath = data.Filename.ValueString()
 	}
 
+	//nolint:gosec // we trust the input
 	err = os.WriteFile(finalOutputPath, res, currentUserRead)
 	if err != nil {
 		resp.Diagnostics.AddError(
