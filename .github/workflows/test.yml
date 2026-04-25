@@ -19,5 +19,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - uses: hashicorp/setup-terraform@v4
+
       - name: Run acceptance tests
         run: make testacc
