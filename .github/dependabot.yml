@@ -5,9 +5,26 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      hashicorp:
+        patterns:
+          - "github.com/hashicorp/*"
+      golang-org-x:
+        patterns:
+          - "golang.org/x/*"
+      google:
+        patterns:
+          - "google.golang.org/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      actions:
+        patterns:
+          - "actions/*"
+      hashicorp:
+        patterns:
+          - "hashicorp/*"
